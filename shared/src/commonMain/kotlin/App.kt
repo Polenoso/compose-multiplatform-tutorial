@@ -33,7 +33,8 @@ fun App() {
     MaterialTheme {
         MainTab(tabs = listOf(
             TabComponent("Dice Roller") { DiceRoller() },
-            TabComponent("Lemonade Maker") { LemonadeMaker() }
+            TabComponent("Lemonade Maker") { LemonadeMaker() },
+            TabComponent("Tip Calculator") { TipCalculator() }
         ))
     }
 }
