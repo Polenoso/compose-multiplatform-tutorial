@@ -104,7 +104,7 @@ fun EditNumberField(
     )
 }
 
-fun tipCalculator(bill: Double, tipPercent: Double = 15.0, roundUp: Boolean): String {
+internal fun tipCalculator(bill: Double, tipPercent: Double = 15.0, roundUp: Boolean): String {
     var tip = tipPercent / 100 * bill
     if(roundUp) {
         tip = kotlin.math.ceil(tip)
