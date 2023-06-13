@@ -32,6 +32,7 @@ import org.jetbrains.compose.resources.ExperimentalResourceApi
 fun App() {
     MaterialTheme {
         MainTab(tabs = listOf(
+            TabComponent("ArtWork") { ArtWork() },
             TabComponent("Dice Roller") { DiceRoller() },
             TabComponent("Lemonade Maker") { LemonadeMaker() },
             TabComponent("Tip Calculator") { TipCalculator() }
