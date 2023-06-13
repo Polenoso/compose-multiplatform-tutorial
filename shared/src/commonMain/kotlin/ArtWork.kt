@@ -1,7 +1,5 @@
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.border
-import androidx.compose.foundation.gestures.Orientation
-import androidx.compose.foundation.gestures.scrollable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -12,14 +10,18 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.Button
+import androidx.compose.material.Card
 import androidx.compose.material.CircularProgressIndicator
+import androidx.compose.material.LinearProgressIndicator
+import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -44,13 +46,13 @@ import io.ktor.client.statement.HttpResponse
 import io.ktor.http.ContentType
 import io.ktor.http.Url
 import io.ktor.http.contentType
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import kotlinx.serialization.*
 import kotlinx.serialization.json.*
 
 @Composable
 fun ArtWork(modifier: Modifier = Modifier) {
-    val scrollableState = rememberScrollState()
     Column(modifier = modifier
                         .fillMaxHeight()
                         .padding(12.dp),
@@ -66,7 +68,7 @@ sealed class ArtWorkState {
 }
 
 @Composable
-fun ArtContent(modifier: Modifier) {
+fun ArtContent(modifier: Modifier = Modifier) {
     val scope = rememberCoroutineScope()
     var state: ArtWorkState by remember { mutableStateOf(ArtWorkState.Loading()) }
     var index: Int by remember { mutableStateOf(0) }
@@ -126,9 +128,14 @@ fun ArtContent(modifier: Modifier) {
 
 @Composable
 fun ArtWorkImage(value: String, modifier: Modifier = Modifier) {
+    val scope = rememberCoroutineScope()
+    val resource = asyncPainterResource(data = Url(value), key = value) {
+        coroutineContext = scope.coroutineContext
+    }
+
     Box(modifier = modifier.border(BorderStroke(1.dp, Color.Black)), contentAlignment = Alignment.Center) {
         KamelImage(
-            resource = asyncPainterResource(data = Url(value)),
+            resource = resource,
             contentDescription = value,
             onLoading = { progress -> CircularProgressIndicator(progress) },
             onFailure = {
@@ -136,6 +143,77 @@ fun ArtWorkImage(value: String, modifier: Modifier = Modifier) {
             }
         )
     }
+}
+
+@Composable
+fun ArtListContent(modifier: Modifier = Modifier) {
+    val scope = rememberCoroutineScope()
+    var state: ArtWorkState by remember { mutableStateOf(ArtWorkState.Loading()) }
+    var currentPage: Int by remember { mutableStateOf(1) }
+    var canLoadMore: Boolean by remember { mutableStateOf(false) }
+
+    LaunchedEffect(false) {
+        scope.launch {
+            state = try {
+                canLoadMore = true
+                val list = ArtWorkService().artworksList()
+                ArtWorkState.Content(list)
+            } catch (e: Exception) {
+                ArtWorkState.Error(e)
+            }
+        }
+    }
+    when (state) {
+        is ArtWorkState.Loading -> Text("Loading")
+        is ArtWorkState.Content ->  {
+            val artWorks = (state as ArtWorkState.Content).artworks
+            Column(modifier = modifier.fillMaxHeight().fillMaxWidth(),
+                verticalArrangement = Arrangement.Center,
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+               ArtWorkList(artWorks, modifier = modifier, canLoadMore) {
+                   scope.launch {
+                       currentPage ++
+                       canLoadMore = false
+                       state = try {
+                           val newArtworks = ArtWorkService().artworksList(currentPage)
+                           val currentArtworks = (state as ArtWorkState.Content).artworks
+                           ArtWorkState.Content(currentArtworks + newArtworks)
+                       } catch (e: Exception) {
+                           ArtWorkState.Error(e)
+                       }
+                       canLoadMore = true
+                   }
+               }
+            }
+        }
+        is ArtWorkState.Error -> Text((state as ArtWorkState.Error).e.toString())
+    }
+}
+
+@Composable
+fun ArtWorkList(artworks: List<ArtWorkData>, modifier: Modifier = Modifier, isLoading: Boolean, onPagination: CoroutineScope.() -> Unit) {
+    val lazyColumnState = rememberLazyListState()
+    val shouldPaginate by remember { derivedStateOf {
+        (isLoading && lazyColumnState.layoutInfo.totalItemsCount > 0 && (lazyColumnState.layoutInfo.visibleItemsInfo.lastOrNull()?.index ?: -9) >= artworks.size - 1 && lazyColumnState.firstVisibleItemIndex != 0)
+    } }
+
+    LazyColumn(modifier = modifier, horizontalAlignment = Alignment.CenterHorizontally, state = lazyColumnState) {
+        items(artworks) {artwork ->
+            Card(modifier = Modifier.padding(6.dp), elevation = 4.dp) {
+                Column {
+                    ArtWorkImage(artwork.downloadUrl, modifier = Modifier.height(194.dp))
+                    Text("By: ${artwork.author}", style = MaterialTheme.typography.h4)
+                }
+            }
+        }
+        item {
+            if (isLoading) {
+                LinearProgressIndicator()
+            }
+        }
+    }
+    LaunchedEffect(shouldPaginate, onPagination)
 }
 
 @Serializable
