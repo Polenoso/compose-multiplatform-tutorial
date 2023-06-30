@@ -23,6 +23,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.FilterQuality
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -120,7 +121,7 @@ fun ArtContent(artWorkService: ArtWorkService, modifier: Modifier = Modifier) {
 
 @Composable
 fun ArtWorkImage(value: String, modifier: Modifier = Modifier) {
-    val resource = asyncPainterResource(data = Url(value), key = value)
+    val resource = asyncPainterResource(data = Url(value), key = value, filterQuality = FilterQuality.None)
 
     Box(modifier = modifier.border(BorderStroke(1.dp, Color.Black)), contentAlignment = Alignment.Center) {
         KamelImage(
