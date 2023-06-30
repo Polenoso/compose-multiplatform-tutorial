@@ -71,13 +71,14 @@ sealed class ArtWorkState {
 fun ArtContent(modifier: Modifier = Modifier) {
     val scope = rememberCoroutineScope()
     var state: ArtWorkState by remember { mutableStateOf(ArtWorkState.Loading()) }
+    val artWorkService: ArtWorkService by remember { derivedStateOf { ArtWorkService() } }
     var index: Int by remember { mutableStateOf(0) }
     var currentPage: Int by remember { mutableStateOf(1) }
 
     LaunchedEffect(false) {
         scope.launch {
             state = try {
-                val list = ArtWorkService().artworksList()
+                val list = artWorkService.artworksList()
                 ArtWorkState.Content(list)
             } catch (e: Exception) {
                 ArtWorkState.Error(e)
@@ -109,7 +110,7 @@ fun ArtContent(modifier: Modifier = Modifier) {
                     currentPage ++
                                  scope.launch {
                                      state = try {
-                                         val newArtworks = ArtWorkService().artworksList(currentPage)
+                                         val newArtworks = artWorkService.artworksList(currentPage)
                                          val currentArtworks = (state as ArtWorkState.Content).artworks
                                          ArtWorkState.Content(currentArtworks + newArtworks)
                                      } catch (e: Exception) {
@@ -149,6 +150,7 @@ fun ArtWorkImage(value: String, modifier: Modifier = Modifier) {
 fun ArtListContent(modifier: Modifier = Modifier) {
     val scope = rememberCoroutineScope()
     var state: ArtWorkState by remember { mutableStateOf(ArtWorkState.Loading()) }
+    val artWorkService: ArtWorkService by remember { derivedStateOf { ArtWorkService() } }
     var currentPage: Int by remember { mutableStateOf(1) }
     var canLoadMore: Boolean by remember { mutableStateOf(false) }
 
@@ -156,7 +158,7 @@ fun ArtListContent(modifier: Modifier = Modifier) {
         scope.launch {
             state = try {
                 canLoadMore = true
-                val list = ArtWorkService().artworksList()
+                val list = artWorkService.artworksList()
                 ArtWorkState.Content(list)
             } catch (e: Exception) {
                 ArtWorkState.Error(e)
@@ -176,7 +178,7 @@ fun ArtListContent(modifier: Modifier = Modifier) {
                        currentPage ++
                        canLoadMore = false
                        state = try {
-                           val newArtworks = ArtWorkService().artworksList(currentPage)
+                           val newArtworks = artWorkService.artworksList(currentPage)
                            val currentArtworks = (state as ArtWorkState.Content).artworks
                            ArtWorkState.Content(currentArtworks + newArtworks)
                        } catch (e: Exception) {
