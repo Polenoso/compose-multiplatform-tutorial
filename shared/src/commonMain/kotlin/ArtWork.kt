@@ -19,17 +19,11 @@ import androidx.compose.material.CircularProgressIndicator
 import androidx.compose.material.LinearProgressIndicator
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.derivedStateOf
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.setValue
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.FilterQuality
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -49,15 +43,14 @@ import io.ktor.http.contentType
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import kotlinx.serialization.*
-import kotlinx.serialization.json.*
 
 @Composable
-fun ArtWork(modifier: Modifier = Modifier) {
+fun ArtWork(artWorkService: ArtWorkService, modifier: Modifier = Modifier) {
     Column(modifier = modifier
                         .fillMaxHeight()
                         .padding(12.dp),
             verticalArrangement = Arrangement.Center) {
-        ArtContent(modifier = modifier)
+        ArtContent(artWorkService, modifier = modifier)
     }
 }
 
@@ -68,7 +61,7 @@ sealed class ArtWorkState {
 }
 
 @Composable
-fun ArtContent(modifier: Modifier = Modifier) {
+fun ArtContent(artWorkService: ArtWorkService, modifier: Modifier = Modifier) {
     val scope = rememberCoroutineScope()
     var state: ArtWorkState by remember { mutableStateOf(ArtWorkState.Loading()) }
     var index: Int by remember { mutableStateOf(0) }
@@ -77,7 +70,7 @@ fun ArtContent(modifier: Modifier = Modifier) {
     LaunchedEffect(false) {
         scope.launch {
             state = try {
-                val list = ArtWorkService().artworksList()
+                val list = artWorkService.artworksList()
                 ArtWorkState.Content(list)
             } catch (e: Exception) {
                 ArtWorkState.Error(e)
@@ -109,7 +102,7 @@ fun ArtContent(modifier: Modifier = Modifier) {
                     currentPage ++
                                  scope.launch {
                                      state = try {
-                                         val newArtworks = ArtWorkService().artworksList(currentPage)
+                                         val newArtworks = artWorkService.artworksList(currentPage)
                                          val currentArtworks = (state as ArtWorkState.Content).artworks
                                          ArtWorkState.Content(currentArtworks + newArtworks)
                                      } catch (e: Exception) {
@@ -128,10 +121,7 @@ fun ArtContent(modifier: Modifier = Modifier) {
 
 @Composable
 fun ArtWorkImage(value: String, modifier: Modifier = Modifier) {
-    val scope = rememberCoroutineScope()
-    val resource = asyncPainterResource(data = Url(value), key = value) {
-        coroutineContext = scope.coroutineContext
-    }
+    val resource = asyncPainterResource(data = Url(value), key = value, filterQuality = FilterQuality.None)
 
     Box(modifier = modifier.border(BorderStroke(1.dp, Color.Black)), contentAlignment = Alignment.Center) {
         KamelImage(
@@ -146,7 +136,7 @@ fun ArtWorkImage(value: String, modifier: Modifier = Modifier) {
 }
 
 @Composable
-fun ArtListContent(modifier: Modifier = Modifier) {
+fun ArtListContent(artWorkService: ArtWorkService, modifier: Modifier = Modifier) {
     val scope = rememberCoroutineScope()
     var state: ArtWorkState by remember { mutableStateOf(ArtWorkState.Loading()) }
     var currentPage: Int by remember { mutableStateOf(1) }
@@ -156,7 +146,7 @@ fun ArtListContent(modifier: Modifier = Modifier) {
         scope.launch {
             state = try {
                 canLoadMore = true
-                val list = ArtWorkService().artworksList()
+                val list = artWorkService.artworksList()
                 ArtWorkState.Content(list)
             } catch (e: Exception) {
                 ArtWorkState.Error(e)
@@ -176,7 +166,7 @@ fun ArtListContent(modifier: Modifier = Modifier) {
                        currentPage ++
                        canLoadMore = false
                        state = try {
-                           val newArtworks = ArtWorkService().artworksList(currentPage)
+                           val newArtworks = artWorkService.artworksList(currentPage)
                            val currentArtworks = (state as ArtWorkState.Content).artworks
                            ArtWorkState.Content(currentArtworks + newArtworks)
                        } catch (e: Exception) {
@@ -200,9 +190,9 @@ fun ArtWorkList(artworks: List<ArtWorkData>, modifier: Modifier = Modifier, isLo
 
     LazyColumn(modifier = modifier, horizontalAlignment = Alignment.CenterHorizontally, state = lazyColumnState) {
         items(artworks) {artwork ->
-            Card(modifier = Modifier.padding(6.dp), elevation = 4.dp) {
+            Card(modifier = Modifier.padding(6.dp).fillMaxWidth(), elevation = 4.dp) {
                 Column {
-                    ArtWorkImage(artwork.downloadUrl, modifier = Modifier.height(194.dp))
+                    ArtWorkImage(artwork.downloadUrl, modifier = Modifier.height(194.dp).fillMaxWidth())
                     Text("By: ${artwork.author}", style = MaterialTheme.typography.h4)
                 }
             }

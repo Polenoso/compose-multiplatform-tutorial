@@ -30,10 +30,11 @@ import org.jetbrains.compose.resources.ExperimentalResourceApi
 @OptIn(ExperimentalResourceApi::class)
 @Composable
 fun App() {
+    val artWorkService: ArtWorkService = remember { ArtWorkService() }
     MaterialTheme {
         MainTab(tabs = listOf(
-            TabComponent("ArtWork List") { ArtListContent() },
-            TabComponent("ArtWork") { ArtWork() },
+            TabComponent("ArtWork List") { ArtListContent(artWorkService) },
+            TabComponent("ArtWork") { ArtWork(artWorkService) },
             TabComponent("Dice Roller") { DiceRoller() },
             TabComponent("Lemonade Maker") { LemonadeMaker() },
             TabComponent("Tip Calculator") { TipCalculator() }
