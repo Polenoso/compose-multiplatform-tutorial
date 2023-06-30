@@ -120,10 +120,7 @@ fun ArtContent(artWorkService: ArtWorkService, modifier: Modifier = Modifier) {
 
 @Composable
 fun ArtWorkImage(value: String, modifier: Modifier = Modifier) {
-    val scope = rememberCoroutineScope()
-    val resource = asyncPainterResource(data = Url(value), key = value) {
-        coroutineContext = scope.coroutineContext
-    }
+    val resource = asyncPainterResource(data = Url(value), key = value)
 
     Box(modifier = modifier.border(BorderStroke(1.dp, Color.Black)), contentAlignment = Alignment.Center) {
         KamelImage(
