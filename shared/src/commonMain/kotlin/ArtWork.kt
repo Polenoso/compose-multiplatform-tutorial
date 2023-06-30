@@ -202,9 +202,9 @@ fun ArtWorkList(artworks: List<ArtWorkData>, modifier: Modifier = Modifier, isLo
 
     LazyColumn(modifier = modifier, horizontalAlignment = Alignment.CenterHorizontally, state = lazyColumnState) {
         items(artworks) {artwork ->
-            Card(modifier = Modifier.padding(6.dp), elevation = 4.dp) {
+            Card(modifier = Modifier.padding(6.dp).fillMaxWidth(), elevation = 4.dp) {
                 Column {
-                    ArtWorkImage(artwork.downloadUrl, modifier = Modifier.height(194.dp))
+                    ArtWorkImage(artwork.downloadUrl, modifier = Modifier.height(194.dp).fillMaxWidth())
                     Text("By: ${artwork.author}", style = MaterialTheme.typography.h4)
                 }
             }
